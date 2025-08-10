@@ -1,4 +1,4 @@
-﻿using CsvHelper;
+using CsvHelper;
 using MathNet.Numerics.Statistics;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -19,13 +19,501 @@ namespace RelationalGit.Calculation
             if (!Directory.Exists(analyzeResultPath))
                 Directory.CreateDirectory(analyzeResultPath);
 
-            //testGetNumKnowledgeable();
             CalculateFaRReduction(actualSimulationId, recommenderSimulationIds, analyzeResultPath);
             CalculateExpertiseLoss(actualSimulationId, recommenderSimulationIds, analyzeResultPath);
             CalculateWorkload(actualSimulationId, recommenderSimulationIds, 10, analyzeResultPath);
-            CalculateAddedPR(recommenderSimulationIds, analyzeResultPath);
-            // CalculateOpenReviews(actualSimulationId, recommenderSimulationIds, analyzeResultPath);
+            CalculateDefectMitigationMetricLoss(actualSimulationId, recommenderSimulationIds, analyzeResultPath);
+            CalculateCCSROutcomePercentile(actualSimulationId, recommenderSimulationIds, analyzeResultPath);
+            CalculateCCSROutcomePercentilePairwise(actualSimulationId, recommenderSimulationIds, analyzeResultPath);
+            CalculateRevPlusPlus(recommenderSimulationIds, analyzeResultPath);
         }
+
+
+
+        public void CalculateExpertiseLossPercentilePairwise(
+          long actualId,
+          long[] simulationsIds,
+          string path,
+          double k = 80
+        )
+        {
+            // 1. Ensure output directory exists
+            if (!Directory.Exists(path))
+                Directory.CreateDirectory(path);
+
+            var result = new List<SimulationResult>();
+            var overallResults = new Dictionary<long, double>();
+
+            using (var dbContext = GetDbContext())
+            {
+                // 2. Preload periods and PR lookup
+                var periods = dbContext.Periods.ToArray();
+                var pullRequests = dbContext.PullRequests.ToDictionary(q => q.Number);
+
+                // 3. Load actual expertise results
+                var actualRecs = dbContext.PullRequestRecommendationResults
+                  .Where(q => q.LossSimulationId == actualId && q.ActualReviewersLength > 0)
+                  .Select(q => new { q.Expertise, q.PullRequestNumber })
+                  .ToArray();
+
+                // 4. Bucket actual expertise by period
+                var actualExpertise = new Dictionary<long, List<double>>();
+                foreach (var rec in actualRecs)
+                {
+                    var prDt = pullRequests[(int)rec.PullRequestNumber].CreatedAtDateTime;
+                    var period = periods.Single(p => p.FromDateTime <= prDt && p.ToDateTime >= prDt);
+
+                    if (!actualExpertise.ContainsKey(period.Id))
+                        actualExpertise[period.Id] = new List<double>();
+
+                    actualExpertise[period.Id].Add(rec.Expertise);
+                }
+
+                // 5. Process each simulation
+                foreach (var simId in simulationsIds)
+                {
+                    var simulatedExpertise = new Dictionary<long, List<double>>();
+                    var lossSim = dbContext.LossSimulations.Single(q => q.Id == simId);
+
+                    var simRecs = dbContext.PullRequestRecommendationResults
+                      .Where(q => q.LossSimulationId == simId && q.ActualReviewersLength > 0)
+                      .Select(q => new { q.Expertise, q.PullRequestNumber})
+                      .ToArray();
+
+                    foreach (var rec in simRecs)
+                    {
+                        var prDt = pullRequests[(int)rec.PullRequestNumber].CreatedAtDateTime;
+                        var period = periods.Single(p => p.FromDateTime <= prDt && p.ToDateTime >= prDt);
+
+                        if (!simulatedExpertise.ContainsKey(period.Id))
+                            simulatedExpertise[period.Id] = new List<double>();
+
+                        simulatedExpertise[period.Id].Add(rec.Expertise);
+                    }
+
+                    var simResult = new SimulationResult() { LossSimulation = lossSim };
+
+                    // 6. Per‐period pairwise percentiles
+                    foreach (var kv in simulatedExpertise)
+                    {
+                        var periodId = kv.Key;
+                        var simList = kv.Value;
+                        var actList = actualExpertise.GetValueOrDefault(periodId);
+
+                        if (actList == null)
+                            continue;
+
+                        // Pairwise increases up to the shorter list length
+                        int minCount = Math.Min(actList.Count, simList.Count);
+                        var increases = new List<double>(minCount);
+                        for (int i = 0; i < minCount; i++)
+                        {
+                            double actualVal = actList[i];
+                            double simVal = simList[i];
+                            double pctInc = actualVal != 0
+                              ? CalculateIncreasePercentage(simVal, actualVal)
+                              : 0;
+                            increases.Add(pctInc);
+                        }
+
+                        // k-th percentile of those increases
+                        double pctileValue = CalculatePercentile(increases, k);
+                        simResult.Results.Add((periodId, pctileValue));
+                    }
+
+                    // 7. Overall pairwise percentile across all periods
+                    var allAct = actualExpertise.SelectMany(x => x.Value).ToList();
+                    var allSim = simulatedExpertise.SelectMany(x => x.Value).ToList();
+                    int overallMin = Math.Min(allAct.Count, allSim.Count);
+                    var overallIncs = new List<double>(overallMin);
+                    for (int i = 0; i < overallMin; i++)
+                    {
+                        double a = allAct[i], s = allSim[i];
+                        overallIncs.Add(a != 0
+                          ? CalculateIncreasePercentage(s, a)
+                          : 0);
+                    }
+                    double overallPctile = CalculatePercentile(overallIncs, k);
+                    overallResults[simId] = overallPctile;
+
+                    result.Add(simResult);
+                }
+            }
+
+            // 8. Write out per‐period and overall pairwise percentiles
+            Write_Percentiles(
+              result,
+              Path.Combine(path, "ExpertiseLoss_Percentile_Pairwise.csv"),
+              overallResults
+            );
+        }
+
+
+        public void CalculateExpertiseLossPercentile(long actualId, long[] simulationsIds, string path, double k = 80)
+        {
+            if (!Directory.Exists(path))
+                Directory.CreateDirectory(path);
+
+            var result = new List<SimulationResult>();
+            var overallResults = new Dictionary<long, double>();
+
+            using (var dbContext = GetDbContext())
+            {
+                var periods = dbContext.Periods.ToArray();
+                var pullRequests = dbContext.PullRequests.ToDictionary(q => q.Number);
+
+                var actualRecommendationResults = dbContext.PullRequestRecommendationResults.Where(q => q.LossSimulationId == actualId && q.ActualReviewersLength > 0)
+                    .Select(q => new { q.Expertise, q.PullRequestNumber })
+                    .ToArray();
+
+                var actualExpertise = new Dictionary<long, List<double>>();
+                foreach (var actualRecommendationResult in actualRecommendationResults)
+                {
+                    var prDateTime = pullRequests[(int)actualRecommendationResult.PullRequestNumber].CreatedAtDateTime;
+                    var period = periods.Single(q => q.FromDateTime <= prDateTime && q.ToDateTime >= prDateTime);
+
+                    if (!actualExpertise.ContainsKey(period.Id))
+                        actualExpertise[period.Id] = new List<double>();
+
+                    actualExpertise[period.Id].Add(actualRecommendationResult.Expertise);
+                }
+
+                var lastPeriod = actualExpertise.Max(q => q.Key);
+                // actualExpertise.Remove(lastPeriod);
+
+                var allActualValues = actualExpertise.SelectMany(x => x.Value).ToList();
+
+                foreach (var simulationId in simulationsIds)
+                {
+                    var simulatedExpertise = new Dictionary<long, List<double>>();
+                    var lossSimulation = dbContext.LossSimulations.Single(q => q.Id == simulationId);
+                    var simulatedRecommendationResults = dbContext.PullRequestRecommendationResults.Where(q => q.LossSimulationId == simulationId && q.ActualReviewersLength > 0)
+                        .Select(q => new { q.Expertise, q.PullRequestNumber })
+                        .ToArray();
+
+                    foreach (var simulatedRecommendationResult in simulatedRecommendationResults)
+                    {
+                        var prDateTime = pullRequests[(int)simulatedRecommendationResult.PullRequestNumber].CreatedAtDateTime;
+                        var period = periods.Single(q => q.FromDateTime <= prDateTime && q.ToDateTime >= prDateTime);
+
+                        if (!simulatedExpertise.ContainsKey(period.Id))
+                            simulatedExpertise[period.Id] = new List<double>();
+
+                        simulatedExpertise[period.Id].Add(simulatedRecommendationResult.Expertise);
+                    }
+
+                    var simulationResult = new SimulationResult()
+                    {
+                        LossSimulation = lossSimulation
+                    };
+
+                    foreach (var simulatedExpertisePeriod in simulatedExpertise)
+                    {
+                        var periodId = simulatedExpertisePeriod.Key;
+                        var actualExpertises = actualExpertise.GetValueOrDefault(periodId);
+                        var simulatedExpertises = simulatedExpertise.GetValueOrDefault(periodId);
+
+                        if (actualExpertises == null)
+                            continue;
+
+                        var actualPercentile = CalculatePercentile(actualExpertises, k);
+                        var simulatedPercentile = CalculatePercentile(simulatedExpertises, k);
+
+                        var value = actualPercentile != 0 ? CalculateIncreasePercentage(simulatedPercentile, actualPercentile) : 0;
+
+                        simulationResult.Results.Add((periodId, value));
+                    }
+
+                    var allSimulatedValues = simulatedExpertise.SelectMany(x => x.Value).ToList();
+                    var overallActualPercentile = CalculatePercentile(allActualValues, k);
+                    var overallSimulatedPercentile = CalculatePercentile(allSimulatedValues, k);
+                    var overallValue = overallActualPercentile != 0 ? CalculateIncreasePercentage(overallSimulatedPercentile, overallActualPercentile) : 0;
+                    overallResults[simulationId] = overallValue;
+
+                    result.Add(simulationResult);
+                }
+            }
+
+            Write_Percentiles(result, Path.Combine(path, "Expertise_Percentile.csv"), overallResults);
+        }
+
+        public void CalculateCCSROutcomePercentilePairwise(long actualId, long[] simulationsIds, string path, double k = 80)
+        {
+            if (!Directory.Exists(path))
+                Directory.CreateDirectory(path);
+
+            var result = new List<SimulationResult>();
+            var overallResults = new Dictionary<long, double>();
+
+            using (var dbContext = GetDbContext())
+            {
+                var periods = dbContext.Periods.ToArray();
+                var pullRequests = dbContext.PullRequests.ToDictionary(q => q.Number);
+
+                var actualRecommendationResults = dbContext.PullRequestRecommendationResults.Where(q => q.LossSimulationId == actualId && q.ActualReviewersLength > 0)
+                    .Select(q => new { q.Expertise, q.PullRequestNumber, q.DefectProneness })
+                    .ToArray();
+
+                var actualDefectPronenesses = new Dictionary<long, List<double>>();
+                foreach (var actualRecommendationResult in actualRecommendationResults)
+                {
+                    var prDateTime = pullRequests[(int)actualRecommendationResult.PullRequestNumber].CreatedAtDateTime;
+                    var period = periods.Single(q => q.FromDateTime <= prDateTime && q.ToDateTime >= prDateTime);
+
+                    if (!actualDefectPronenesses.ContainsKey(period.Id))
+                        actualDefectPronenesses[period.Id] = new List<double>();
+
+                    actualDefectPronenesses[period.Id].Add((double)actualRecommendationResult.DefectProneness);
+                }
+
+                foreach (var simulationId in simulationsIds)
+                {
+                    var simulatedDefectPronenesses = new Dictionary<long, List<double>>();
+                    var lossSimulation = dbContext.LossSimulations.Single(q => q.Id == simulationId);
+                    var simulatedRecommendationResults = dbContext.PullRequestRecommendationResults.Where(q => q.LossSimulationId == simulationId && q.ActualReviewersLength > 0)
+                        .Select(q => new { q.Expertise, q.PullRequestNumber, q.DefectProneness })
+                        .ToArray();
+
+                    foreach (var simulatedRecommendationResult in simulatedRecommendationResults)
+                    {
+                        var prDateTime = pullRequests[(int)simulatedRecommendationResult.PullRequestNumber].CreatedAtDateTime;
+                        var period = periods.Single(q => q.FromDateTime <= prDateTime && q.ToDateTime >= prDateTime);
+
+                        if (!simulatedDefectPronenesses.ContainsKey(period.Id))
+                            simulatedDefectPronenesses[period.Id] = new List<double>();
+
+                        simulatedDefectPronenesses[period.Id].Add((double)simulatedRecommendationResult.DefectProneness);
+                    }
+
+                    var simulationResult = new SimulationResult()
+                    {
+                        LossSimulation = lossSimulation
+                    };
+
+                    // Calculate increase percentages for each period
+                    foreach (var simulatedDefectPronenessPeriod in simulatedDefectPronenesses)
+                    {
+                        var periodId = simulatedDefectPronenessPeriod.Key;
+                        var actualDefectProneness = actualDefectPronenesses.GetValueOrDefault(periodId);
+                        var simulatedDefectProneness = simulatedDefectPronenesses.GetValueOrDefault(periodId);
+
+                        if (actualDefectProneness == null)
+                            continue;
+
+                        // Calculate increase percentages for each value pair
+                        var increasePercentages = new List<double>();
+                        int minCount = Math.Min(actualDefectProneness.Count, simulatedDefectProneness.Count);
+
+                        for (int i = 0; i < minCount; i++)
+                        {
+                            var actualValue = actualDefectProneness[i];
+                            var simulatedValue = simulatedDefectProneness[i];
+
+                            var increasePercentage = actualValue != 0 ? CalculateIncreasePercentage(simulatedValue, actualValue) : 0;
+                            increasePercentages.Add(increasePercentage);
+                        }
+
+                        // Get 80th percentile of the increase percentages
+                        var percentileValue = CalculatePercentile(increasePercentages, k);
+                        simulationResult.Results.Add((periodId, percentileValue));
+                    }
+
+                    // Calculate overall result using all value pairs
+                    var allIncreasePercentages = new List<double>();
+                    var allActualValues = actualDefectPronenesses.SelectMany(x => x.Value).ToList();
+                    var allSimulatedValues = simulatedDefectPronenesses.SelectMany(x => x.Value).ToList();
+
+                    int overallMinCount = Math.Min(allActualValues.Count, allSimulatedValues.Count);
+                    for (int i = 0; i < overallMinCount; i++)
+                    {
+                        var actualValue = allActualValues[i];
+                        var simulatedValue = allSimulatedValues[i];
+
+                        var increasePercentage = actualValue != 0 ? CalculateIncreasePercentage(simulatedValue, actualValue) : 0;
+                        allIncreasePercentages.Add(increasePercentage);
+                    }
+
+                    var overallValue = CalculatePercentile(allIncreasePercentages, k);
+                    overallResults[simulationId] = overallValue;
+
+                    result.Add(simulationResult);
+                }
+            }
+
+            Write_Percentiles(result, Path.Combine(path, "CCSR_Percentile_Pairwise.csv"), overallResults);
+        }
+
+        public void CalculateCCSROutcomePercentile(long actualId, long[] simulationsIds, string path, double k = 80)
+        {
+            if (!Directory.Exists(path))
+                Directory.CreateDirectory(path);
+
+            var result = new List<SimulationResult>();
+            var overallResults = new Dictionary<long, double>();
+
+            using (var dbContext = GetDbContext())
+            {
+                var periods = dbContext.Periods.ToArray();
+                var pullRequests = dbContext.PullRequests.ToDictionary(q => q.Number);
+
+                var actualRecommendationResults = dbContext.PullRequestRecommendationResults.Where(q => q.LossSimulationId == actualId && q.ActualReviewersLength > 0)
+                    .Select(q => new { q.Expertise, q.PullRequestNumber, q.DefectProneness })
+                    .ToArray();
+
+                var actualDefectPronenesses = new Dictionary<long, List<double>>();
+                foreach (var actualRecommendationResult in actualRecommendationResults)
+                {
+                    var prDateTime = pullRequests[(int)actualRecommendationResult.PullRequestNumber].CreatedAtDateTime;
+                    var period = periods.Single(q => q.FromDateTime <= prDateTime && q.ToDateTime >= prDateTime);
+
+                    if (!actualDefectPronenesses.ContainsKey(period.Id))
+                        actualDefectPronenesses[period.Id] = new List<double>();
+
+                    actualDefectPronenesses[period.Id].Add((double)actualRecommendationResult.DefectProneness);
+                }
+
+                var allActualValues = actualDefectPronenesses.SelectMany(x => x.Value).ToList();
+
+                foreach (var simulationId in simulationsIds)
+                {
+                    var simulatedDefectPronenesses = new Dictionary<long, List<double>>();
+                    var lossSimulation = dbContext.LossSimulations.Single(q => q.Id == simulationId);
+                    var simulatedRecommendationResults = dbContext.PullRequestRecommendationResults.Where(q => q.LossSimulationId == simulationId && q.ActualReviewersLength > 0)
+                        .Select(q => new { q.Expertise, q.PullRequestNumber, q.DefectProneness })
+                        .ToArray();
+
+                    foreach (var simulatedRecommendationResult in simulatedRecommendationResults)
+                    {
+                        var prDateTime = pullRequests[(int)simulatedRecommendationResult.PullRequestNumber].CreatedAtDateTime;
+                        var period = periods.Single(q => q.FromDateTime <= prDateTime && q.ToDateTime >= prDateTime);
+
+                        if (!simulatedDefectPronenesses.ContainsKey(period.Id))
+                            simulatedDefectPronenesses[period.Id] = new List<double>();
+
+                        simulatedDefectPronenesses[period.Id].Add((double)simulatedRecommendationResult.DefectProneness);
+                    }
+
+                    var simulationResult = new SimulationResult()
+                    {
+                        LossSimulation = lossSimulation
+                    };
+
+                    foreach (var simulatedDefectPronenessPeriod in simulatedDefectPronenesses)
+                    {
+                        var periodId = simulatedDefectPronenessPeriod.Key;
+                        var actualDefectProneness = actualDefectPronenesses.GetValueOrDefault(periodId);
+                        var simulatedDefectProneness = simulatedDefectPronenesses.GetValueOrDefault(periodId);
+
+                        if (actualDefectProneness == null)
+                            continue;
+
+                        var actualPercentile = CalculatePercentile(actualDefectProneness, k);
+                        var simulatedPercentile = CalculatePercentile(simulatedDefectProneness, k);
+
+                        var value = actualPercentile != 0 ? CalculateIncreasePercentage(simulatedPercentile, actualPercentile) : 0;
+
+                        simulationResult.Results.Add((periodId, value));
+                    }
+
+                    var allSimulatedValues = simulatedDefectPronenesses.SelectMany(x => x.Value).ToList();
+                    var overallActualPercentile = CalculatePercentile(allActualValues, k);
+                    var overallSimulatedPercentile = CalculatePercentile(allSimulatedValues, k);
+                    var overallValue = overallActualPercentile != 0 ? CalculateIncreasePercentage(overallSimulatedPercentile, overallActualPercentile) : 0;
+                    overallResults[simulationId] = overallValue;
+
+                    result.Add(simulationResult);
+                }
+            }
+
+            Write_Percentiles(result, Path.Combine(path, "CCSR_Percentile.csv"), overallResults);
+        }
+
+        private static void Write_Percentiles(IEnumerable<SimulationResult> simulationResults, string path, Dictionary<long, double> overallResults)
+        {
+            using (var dt = new DataTable())
+            {
+                dt.Columns.Add("PeriodId", typeof(string));
+                foreach (var simulationResult in simulationResults)
+                {
+
+                    string simulationStrategy = simulationResult.LossSimulation.PullRequestReviewerSelectionStrategy;
+                    int colonIndex = simulationStrategy.LastIndexOf(':');
+                    int hyphenOneIndex = simulationStrategy.IndexOf("-1", colonIndex);
+                    string simulation_info = simulationResult.LossSimulation.KnowledgeShareStrategyType + "-" + simulationResult.LossSimulation.Id + "-" + simulationStrategy.Substring(colonIndex + 1, hyphenOneIndex - colonIndex - 1);
+                    dt.Columns.Add(simulation_info, typeof(double));
+                }
+
+                var rows = simulationResults.ElementAt(0).Results
+                    .Select(q => q.PeriodId)
+                    .OrderBy(q => q)
+                    .Select(q =>
+                    {
+                        var row = dt.NewRow();
+                        row[0] = q;
+                        return row;
+                    }).ToArray();
+
+                for (int j = 0; j < rows.Length; j++)
+                {
+                    for (int i = 0; i < simulationResults.Count(); i++)
+                    {
+                        rows[j][i + 1] = simulationResults.ElementAt(i).Results.SingleOrDefault(q => q.PeriodId == int.Parse(rows[j][0].ToString())).Value;
+                    }
+                    dt.Rows.Add(rows[j]);
+                }
+
+                var overallRow = dt.NewRow();
+                overallRow[0] = "Overall";
+                for (int i = 0; i < simulationResults.Count(); i++)
+                {
+                    var simulationId = simulationResults.ElementAt(i).LossSimulation.Id;
+                    overallRow[i + 1] = overallResults[simulationId];
+                }
+                dt.Rows.Add(overallRow);
+
+                using (var writer = new StreamWriter(path))
+                using (var csv = new CsvWriter(writer))
+                {
+                    foreach (DataColumn column in dt.Columns)
+                    {
+                        csv.WriteField(column.ColumnName);
+                    }
+                    csv.NextRecord();
+                    foreach (DataRow row in dt.Rows)
+                    {
+                        for (var i = 0; i < dt.Columns.Count; i++)
+                        {
+                            csv.WriteField(row[i]);
+                        }
+                        csv.NextRecord();
+                    }
+                }
+            }
+        }
+
+        private static double CalculatePercentile(List<double> values, double percentile)
+        {
+            if (values == null || values.Count == 0)
+                return 0;
+
+            var sortedValues = values.OrderBy(x => x).ToList();
+            var index = (percentile / 100.0) * (sortedValues.Count - 1);
+
+            if (index == Math.Floor(index))
+            {
+                return sortedValues[(int)index];
+            }
+            else
+            {
+                var lowerIndex = (int)Math.Floor(index);
+                var upperIndex = (int)Math.Ceiling(index);
+                var weight = index - lowerIndex;
+
+                return sortedValues[lowerIndex] * (1 - weight) + sortedValues[upperIndex] * weight;
+            }
+        }
+
+
 
         public void CalculateWorkload(long actualId, long[] simulationsIds, int topReviewers, string path)
         {
@@ -62,7 +550,7 @@ namespace RelationalGit.Calculation
                 foreach (var simulationId in simulationsIds)
                 {
                     var lossSimulation = dbContext.LossSimulations.Single(q => q.Id == simulationId);
-
+                    
                     var simulatedSelectedReviewers = dbContext.RecommendedPullRequestReviewers.Where(q => q.LossSimulationId == simulationId)
                         .Select(q => new { q.NormalizedReviewerName, q.PullRequestNumber })
                         .AsNoTracking()
@@ -178,7 +666,7 @@ namespace RelationalGit.Calculation
                 var pullRequests = dbContext.PullRequests.ToDictionary(q => q.Number);
 
                 var actualRecommendationResults = dbContext.PullRequestRecommendationResults.Where(q => q.LossSimulationId == actualId && q.ActualReviewersLength > 0)
-                    .Select(q => new { q.Expertise, q.PullRequestNumber })
+                    .Select(q => new { q.Expertise, q.PullRequestNumber})
                     .ToArray();
 
                 var actualExpertise = new Dictionary<long, List<double>>();
@@ -202,7 +690,7 @@ namespace RelationalGit.Calculation
                     var simulatedExpertise = new Dictionary<long, List<double>>();
                     var lossSimulation = dbContext.LossSimulations.Single(q => q.Id == simulationId);
                     var simulatedRecommendationResults = dbContext.PullRequestRecommendationResults.Where(q => q.LossSimulationId == simulationId && q.ActualReviewersLength > 0)
-                        .Select(q => new { q.Expertise, q.PullRequestNumber })
+                        .Select(q => new { q.Expertise, q.PullRequestNumber})
                         .ToArray();
 
                     foreach (var simulatedRecommendationResult in simulatedRecommendationResults)
@@ -242,6 +730,82 @@ namespace RelationalGit.Calculation
             Write(result, Path.Combine(path, "Expertise.csv"));
         }
 
+
+        public void CalculateDefectMitigationMetricLoss(long actualId, long[] simulationsIds, string path)
+        {
+            if (!Directory.Exists(path))
+                Directory.CreateDirectory(path);
+
+            var result = new List<SimulationResult>();
+
+            using (var dbContext = GetDbContext())
+            {
+                var periods = dbContext.Periods.ToArray();
+                var pullRequests = dbContext.PullRequests.ToDictionary(q => q.Number);
+
+                var actualRecommendationResults = dbContext.PullRequestRecommendationResults.Where(q => q.LossSimulationId == actualId && q.ActualReviewersLength > 0)
+                    .Select(q => new { q.Expertise, q.PullRequestNumber, q.DefectProneness })
+                    .ToArray();
+
+                var actualDefectPronenesses = new Dictionary<long, List<double>>();
+                foreach (var actualRecommendationResult in actualRecommendationResults)
+                {
+                    var prDateTime = pullRequests[(int)actualRecommendationResult.PullRequestNumber].CreatedAtDateTime;
+                    var period = periods.Single(q => q.FromDateTime <= prDateTime && q.ToDateTime >= prDateTime);
+
+                    if (!actualDefectPronenesses.ContainsKey(period.Id))
+                        actualDefectPronenesses[period.Id] = new List<double>();
+
+                    actualDefectPronenesses[period.Id].Add((double)actualRecommendationResult.DefectProneness);
+                }
+
+
+                var lastPeriod = actualDefectPronenesses.Max(q => q.Key);
+                actualDefectPronenesses.Remove(lastPeriod);
+
+                foreach (var simulationId in simulationsIds)
+                {
+                    var simulatedDefectPronenesses = new Dictionary<long, List<double>>();
+                    var lossSimulation = dbContext.LossSimulations.Single(q => q.Id == simulationId);
+                    var simulatedRecommendationResults = dbContext.PullRequestRecommendationResults.Where(q => q.LossSimulationId == simulationId && q.ActualReviewersLength > 0)
+                        .Select(q => new { q.Expertise, q.PullRequestNumber, q.DefectProneness })
+                        .ToArray();
+
+                    foreach (var simulatedRecommendationResult in simulatedRecommendationResults)
+                    {
+                        var prDateTime = pullRequests[(int)simulatedRecommendationResult.PullRequestNumber].CreatedAtDateTime;
+                        var period = periods.Single(q => q.FromDateTime <= prDateTime && q.ToDateTime >= prDateTime);
+
+                        if (!simulatedDefectPronenesses.ContainsKey(period.Id))
+                            simulatedDefectPronenesses[period.Id] = new List<double>();
+
+                        simulatedDefectPronenesses[period.Id].Add((double)simulatedRecommendationResult.DefectProneness);
+                    }
+
+                    var simulationResult = new SimulationResult()
+                    {
+                        LossSimulation = lossSimulation
+                    };
+
+                    foreach (var simulatedDefectPronenessPeriod in simulatedDefectPronenesses)
+                    {
+                        var periodId = simulatedDefectPronenessPeriod.Key;
+                        var actualDefectProneness = actualDefectPronenesses.GetValueOrDefault(periodId);
+                        var simulatedDefectProneness = simulatedDefectPronenesses.GetValueOrDefault(periodId);
+
+                        if (actualDefectProneness == null)
+                            continue;
+                        var value = actualDefectProneness.Sum() != 0 ? CalculateIncreasePercentage((simulatedDefectProneness.Sum()),
+                            (actualDefectProneness.Sum())) : 0;
+
+                        simulationResult.Results.Add((periodId, value));
+                    }
+                    result.Add(simulationResult);
+                }
+            }
+
+            Write(result, Path.Combine(path, "CSR.csv"));
+        }
         private static void CalculateHoardings(long actualId, long[] simulationsIds, int topReviewers, string path)
         {
             var result = new List<SimulationResult>();
@@ -383,13 +947,13 @@ namespace RelationalGit.Calculation
         private void testGetNumKnowledgeable()
         {
             using (var dbContext = GetDbContext())
-
+                
             {
                 //Get the files to be used for the testing.
                 var developers = dbContext.Developers.ToArray();
                 //5259320, 5259067 are the ones that should lose a knowledgeable.
                 int[] fileIds = { 5230853, 5230863, 5230877,
-                     5259012, 5259013,5259040, 5259067,
+                     5259012, 5259013,5259040, 5259067, 
                     5259115, 5259320,
                 };
                 var testFiles = getTestFiles(dbContext, fileIds);
@@ -405,12 +969,12 @@ namespace RelationalGit.Calculation
                     i += 1;
                     // Console.WriteLine("File details: " + file.getStringForTesting());
 
-                    //Verify the leavers are being adjusted appropriately
+                //Verify the leavers are being adjusted appropriately
 
                     Console.WriteLine("Raw Knowledgeable Developer Count: " + file.TotalKnowledgeables);
-                    Console.WriteLine("Count Adjusted for leavers: " +
+                    Console.WriteLine("Count Adjusted for leavers: " + 
                         getNumKnowledgeable(file, developers, NameToCanonical, false));
-
+                    
                 }
                 //TODO Have this generated instead of hard coded for the example.
                 Console.WriteLine("Relevant leavers: PatGavlin");
@@ -421,14 +985,14 @@ namespace RelationalGit.Calculation
         //Returns an array of the FileKnowledgeables with Ids specified in fileIds for testing purposes.
         private FileKnowledgeable[] getTestFiles(GitRepositoryDbContext dbContext, int[] fileIds)
         {
-
-            var result = dbContext.FileKnowledgeables.Where(q =>
+            
+            var result = dbContext.FileKnowledgeables.Where(q => 
             Array.Exists(fileIds, element => element == (int)q.Id))
                 .ToArray();
             return result;
         }
-        private int getNumKnowledgeable(FileKnowledgeable q,
-            Developer[] developers, Dictionary<String, String> canonicalPaths, bool ignoreLeavers = true)
+        private int getNumKnowledgeable(FileKnowledgeable q, 
+            Developer[] developers, Dictionary<String,String> canonicalPaths, bool ignoreLeavers = true)
         {
             //If the leavers knowledge loss is to be ignored
             if (ignoreLeavers)
@@ -464,14 +1028,14 @@ namespace RelationalGit.Calculation
             }
         }
 
-        private static bool checkIfLeaver(FileKnowledgeable q, string Knowledgeable,
-            Developer d, Dictionary<String, String> canonicalPaths)
+        private static bool checkIfLeaver(FileKnowledgeable q, string Knowledgeable, 
+            Developer d, Dictionary<String,String> canonicalPaths)
         {
             //String fileName = canonicalPaths[q.CanonicalPath];
             //if (TEMPVAL < 5) { TEMPVAL++;
             //    Console.WriteLine(fileName, q.CanonicalPath);
             //}
-
+            
             return d.NormalizedName.Equals(Knowledgeable) && d.LastCommitPeriodId <= (int)q.PeriodId;
         }
         //static int TEMPVAL = 0;
@@ -481,10 +1045,10 @@ namespace RelationalGit.Calculation
                 Directory.CreateDirectory(path);
 
             var result = new List<SimulationResult>();
-
+            
             using (var dbContext = GetDbContext())
             {
-
+                
                 var actualFaR = dbContext.FileKnowledgeables.Where(q => q.HasReviewed && q.TotalKnowledgeables < 2 && q.LossSimulationId == actualId).
                     GroupBy(q => q.PeriodId).
                     Select(q => new { Count = q.Count(), PeriodId = q.Key })
@@ -510,7 +1074,7 @@ namespace RelationalGit.Calculation
 
                     foreach (var simulatedFaRPeriod in simulatedFaR)
                     {
-
+                        
                         var actualValue = actualFaR.SingleOrDefault(q => q.PeriodId == simulatedFaRPeriod.PeriodId);
 
                         if (actualValue == null)
@@ -529,8 +1093,8 @@ namespace RelationalGit.Calculation
             Write(result, Path.Combine(path, "FaR.csv"));
 
         }
-
-        public void CalculateAddedPR(long[] simulationsIds, string path)
+       
+                public void CalculateRevPlusPlus(long[] simulationsIds, string path)
         {
             if (!Directory.Exists(path))
                 Directory.CreateDirectory(path);
@@ -641,7 +1205,11 @@ namespace RelationalGit.Calculation
 
                 foreach (var simulation in results)
                 {
-                    dt.Columns.Add(simulation.LossSimulation.KnowledgeShareStrategyType + "-" + simulation.LossSimulation.Id, typeof(double));
+                    string simulationStrategy = simulationResult.LossSimulation.PullRequestReviewerSelectionStrategy;
+                    int colonIndex = simulationStrategy.LastIndexOf(':');
+                    int hyphenOneIndex = simulationStrategy.IndexOf("-1", colonIndex);
+                    string simulation_info = simulationResult.LossSimulation.KnowledgeShareStrategyType + "-" + simulationResult.LossSimulation.Id + "-" + simulationStrategy.Substring(colonIndex + 1, hyphenOneIndex - colonIndex - 1);
+                    dt.Columns.Add(simulation_info, typeof(double));
                 }
 
                 var periodIds = results
@@ -658,7 +1226,7 @@ namespace RelationalGit.Calculation
                     foreach (var simulation in results)
                     {
                         var resultEntry = simulation.Results.FirstOrDefault(r => r.PeriodId == periodId);
-                        row[simulation.LossSimulation.KnowledgeShareStrategyType + "-" + simulation.LossSimulation.Id] =
+                        row[simulation.LossSimulation.KnowledgeShareStrategyType + "-" + simulation.LossSimulation.Id] = 
                             resultEntry != default ? resultEntry.Value : (object)DBNull.Value;
                     }
 
@@ -802,7 +1370,7 @@ namespace RelationalGit.Calculation
         }
 
         private static void CalculateOpenReviews(long actualId, long[] simulationsIds, string path)
-        {
+            {
             var result = new List<OpenReviewResult>();
             foreach (var simulationId in simulationsIds)
             {
@@ -810,13 +1378,13 @@ namespace RelationalGit.Calculation
                 var values = new List<int>();
 
                 var AppSettingsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "relationalgit.json");
-
+                
                 var builder = new ConfigurationBuilder()
               .AddJsonFile(AppSettingsPath);
 
                 var Configuration = builder.Build();
 
-                string connectionString = Configuration.GetConnectionString("RelationalGit");
+                string connectionString =  Configuration.GetConnectionString("RelationalGit");
                 using (SqlConnection connection = new SqlConnection(connectionString))
                 {
                     var queryString = $@"SELECT  NormalizedName,
@@ -826,10 +1394,10 @@ namespace RelationalGit.Calculation
   order by pulls desc";
                     SqlCommand command = new SqlCommand(queryString, connection);
                     command.Parameters.AddWithValue("@simId", simulationId);
-                    connection.Open();
+                     connection.Open();
                     command.CommandTimeout = 0;
                     SqlDataReader reader = command.ExecuteReader();
-
+                    
                     try
                     {
                         while (reader.Read())
@@ -858,12 +1426,12 @@ namespace RelationalGit.Calculation
 
                     result.Add(openRevResult);
                 }
-
+                
             }
-            WriteOpenReviws(result, Path.Combine(path, "AUC.csv"));
+            WriteOpenReviws(result, Path.Combine(path, "auc.csv"));
         }
 
-
+      
 
         private static void CalculateTotalFaRRaw(long[] simulationsIds, string path)
         {
@@ -911,18 +1479,22 @@ namespace RelationalGit.Calculation
 
                 foreach (var simulationResult in simulationResults)
                 {
-                    dt.Columns.Add(simulationResult.LossSimulation.KnowledgeShareStrategyType + "-" + simulationResult.LossSimulation.Id, typeof(double));
+                    string simulationStrategy = simulationResult.LossSimulation.PullRequestReviewerSelectionStrategy;
+                    int colonIndex = simulationStrategy.LastIndexOf(':');
+                    int hyphenOneIndex = simulationStrategy.IndexOf("-1", colonIndex);
+                    string simulation_info = simulationResult.LossSimulation.KnowledgeShareStrategyType + "-" + simulationResult.LossSimulation.Id + "-" + simulationStrategy.Substring(colonIndex + 1, hyphenOneIndex - colonIndex - 1);
+                    dt.Columns.Add(simulation_info, typeof(double));
                 }
 
                 var rows = simulationResults.ElementAt(0).Results
                     .Select(q => q.PeriodId)
                     .OrderBy(q => q)
                     .Select(q =>
-                    {
-                        var row = dt.NewRow();
-                        row[0] = q;
-                        return row;
-                    }).ToArray();
+                {
+                    var row = dt.NewRow();
+                    row[0] = q;
+                    return row;
+                }).ToArray();
 
 
                 for (int j = 0; j < rows.Length - 1; j++)
@@ -967,7 +1539,7 @@ namespace RelationalGit.Calculation
                     averages.Add(values.Average());
                     rowAverage[columnIndex] = values.Average();
                 }
-
+               
                 dt.Rows.Add(rowMedian);
                 dt.Rows.Add(rowAverage);
 
@@ -995,15 +1567,19 @@ namespace RelationalGit.Calculation
         {
             using (var dt = new DataTable())
             {
-
+               
                 foreach (var openRevResult in openReviewResults)
                 {
-                    dt.Columns.Add(openRevResult.LossSimulation.KnowledgeShareStrategyType + "-" + openRevResult.LossSimulation.Id, typeof(double));
+                    string simulationStrategy = simulationResult.LossSimulation.PullRequestReviewerSelectionStrategy;
+                    int colonIndex = simulationStrategy.LastIndexOf(':');
+                    int hyphenOneIndex = simulationStrategy.IndexOf("-1", colonIndex);
+                    string simulation_info = simulationResult.LossSimulation.KnowledgeShareStrategyType + "-" + simulationResult.LossSimulation.Id + "-" + simulationStrategy.Substring(colonIndex + 1, hyphenOneIndex - colonIndex - 1);
+                    dt.Columns.Add(simulation_info, typeof(double));
                 }
                 var max = openReviewResults.Max(a => a.Results.Count());
                 var temp = openReviewResults.Where(a => a.Results.Count() == max).FirstOrDefault();
                 var rows = temp.Results
-
+                    
                     .OrderBy(q => q)
                     .Select(q =>
                     {
@@ -1015,7 +1591,7 @@ namespace RelationalGit.Calculation
 
                 for (int j = 0; j < rows.Length - 1; j++)
                 {
-
+                   
 
                     for (int i = 0; i < openReviewResults.Count(); i++)
                     {
@@ -1028,12 +1604,12 @@ namespace RelationalGit.Calculation
                         {
                             rows[j][i] = DBNull.Value;
                         }
-
+                       
                     }
                     dt.Rows.Add(rows[j]);
                 }
 
-
+                
                 using (var writer = new StreamWriter(path))
                 using (var csv = new CsvWriter(writer))
                 {
@@ -1047,12 +1623,12 @@ namespace RelationalGit.Calculation
                     {
                         for (var i = 0; i < dt.Columns.Count; i++)
                         {
-
+                           
                             csv.WriteField(row[i]);
                         }
                         csv.NextRecord();
                     }
-
+                    
                 }
             }
         }
@@ -1095,7 +1671,7 @@ namespace RelationalGit.Calculation
 
             public List<int> Results { get; set; } = new List<int>();
 
-
+            
         }
 
         private static double CalculateIncreasePercentage(double first, double second)
