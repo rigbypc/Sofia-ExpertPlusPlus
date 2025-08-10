@@ -42,4 +42,4 @@ Note: Based on the recommender's definition, this query may take up to 10 minute
 
 ### How to calculate the Gini-Workload for each recommender.
 
-To calculate the Gini-Workload outcome for each recommender, you should run the [WorkloadAUC.r](WorkloadMeasures/WorkloadAUC.R) script, using the extracted open reviews. 
+To calculate the Gini-Workload outcome for each recommender, you should run the [WorkloadAUC.r](WorkloadAUC.R) script, using the extracted open reviews. 
