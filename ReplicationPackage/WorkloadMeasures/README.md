@@ -38,8 +38,7 @@ GROUP BY PullIndex
 ORDER BY PullIndex;
 
 ```
-
-Note: Based on the recommender's definition, this query may take up to 10 minutes to run for each recommender. The data from our simulations is available in [ResultsCSV](Data/Workload/Simulated/) Directory.
+Note: Based on the recommender's definition, this query may take up to 10 minutes to run for each recommender. The data from our simulations is available in [ResultsCSV](../ResultsCSV/WorkloadAUC) Directory.
 
 ### How to calculate the Gini-Workload for each recommender.
 
