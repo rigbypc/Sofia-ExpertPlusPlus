@@ -82,9 +82,7 @@ auc_difference_percentage <- function(a, s) {
 
 # get the cumulative proportion of workload at p
 cumulative_at_p_all <- function(d, p) {
-  r <- c(get_cumulative_at_df(percentage_percentage_freq(d$CoreFX), p), 
-         get_cumulative_at_df(percentage_percentage_freq(d$CoreCLR), p), 
-         get_cumulative_at_df(percentage_percentage_freq(d$Roslyn), p), 
+  r <- c(get_cumulative_at_df(percentage_percentage_freq(d$Roslyn), p), 
          get_cumulative_at_df(percentage_percentage_freq(d$Rust), p), 
          get_cumulative_at_df(percentage_percentage_freq(d$Kubernetes), p)
   )
@@ -92,7 +90,7 @@ cumulative_at_p_all <- function(d, p) {
   print('Average Across Projects:')
   print(mean(r))
   #print(100-mean(r))
-  print('CoreFX, CoreCLR, Roslyn, Rust, Kubernetes:')
+  print('Roslyn, Rust, Kubernetes:')
   r
 }
 
@@ -110,15 +108,13 @@ quantile_all <- function(d, p) {
 }
 
 auc_difference_percentage_all <- function(a, s) {
-  r <- c(auc_difference_percentage(a$CoreFX, s$CoreFX), 
-         auc_difference_percentage(a$CoreCLR, s$CoreCLR),
-         auc_difference_percentage(a$Roslyn, s$Roslyn),
+  r <- c(auc_difference_percentage(a$Roslyn, s$Roslyn),
          auc_difference_percentage(a$Rust, s$Rust),
          auc_difference_percentage(a$Kubernetes, s$Kubernetes)
   )
   print('Average Across Projects:')
   print(mean(r))
-  print('CoreFX, CoreCLR, Roslyn, Rust, Kubernetes:')
+  print('Roslyn, Rust, Kubernetes:')
   r
 }
 auc_difference_percentage_Simulated <- function(a, s) {
