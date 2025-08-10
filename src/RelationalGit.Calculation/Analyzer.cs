@@ -23,7 +23,6 @@ namespace RelationalGit.Calculation
             CalculateExpertiseLoss(actualSimulationId, recommenderSimulationIds, analyzeResultPath);
             CalculateWorkload(actualSimulationId, recommenderSimulationIds, 10, analyzeResultPath);
             CalculateDefectMitigationMetricLoss(actualSimulationId, recommenderSimulationIds, analyzeResultPath);
-            CalculateCCSROutcomePercentile(actualSimulationId, recommenderSimulationIds, analyzeResultPath);
             CalculateCCSROutcomePercentilePairwise(actualSimulationId, recommenderSimulationIds, analyzeResultPath);
             CalculateRevPlusPlus(recommenderSimulationIds, analyzeResultPath);
         }
@@ -1094,7 +1093,7 @@ namespace RelationalGit.Calculation
 
         }
        
-                public void CalculateRevPlusPlus(long[] simulationsIds, string path)
+        public void CalculateRevPlusPlus(long[] simulationsIds, string path)
         {
             if (!Directory.Exists(path))
                 Directory.CreateDirectory(path);
@@ -1205,10 +1204,10 @@ namespace RelationalGit.Calculation
 
                 foreach (var simulation in results)
                 {
-                    string simulationStrategy = simulationResult.LossSimulation.PullRequestReviewerSelectionStrategy;
+                    string simulationStrategy = simulation.LossSimulation.PullRequestReviewerSelectionStrategy;
                     int colonIndex = simulationStrategy.LastIndexOf(':');
                     int hyphenOneIndex = simulationStrategy.IndexOf("-1", colonIndex);
-                    string simulation_info = simulationResult.LossSimulation.KnowledgeShareStrategyType + "-" + simulationResult.LossSimulation.Id + "-" + simulationStrategy.Substring(colonIndex + 1, hyphenOneIndex - colonIndex - 1);
+                    string simulation_info = simulation.LossSimulation.KnowledgeShareStrategyType + "-" + simulation.LossSimulation.Id + "-" + simulationStrategy.Substring(colonIndex + 1, hyphenOneIndex - colonIndex - 1);
                     dt.Columns.Add(simulation_info, typeof(double));
                 }
 
@@ -1226,7 +1225,12 @@ namespace RelationalGit.Calculation
                     foreach (var simulation in results)
                     {
                         var resultEntry = simulation.Results.FirstOrDefault(r => r.PeriodId == periodId);
-                        row[simulation.LossSimulation.KnowledgeShareStrategyType + "-" + simulation.LossSimulation.Id] = 
+                       
+                        string simulationStrategy = simulation.LossSimulation.PullRequestReviewerSelectionStrategy;
+                        int colonIndex = simulationStrategy.LastIndexOf(':');
+                        int hyphenOneIndex = simulationStrategy.IndexOf("-1", colonIndex);
+                        string simulation_info = simulation.LossSimulation.KnowledgeShareStrategyType + "-" + simulation.LossSimulation.Id + "-" + simulationStrategy.Substring(colonIndex + 1, hyphenOneIndex - colonIndex - 1);
+                        row[simulation_info] = 
                             resultEntry != default ? resultEntry.Value : (object)DBNull.Value;
                     }
 
@@ -1239,7 +1243,11 @@ namespace RelationalGit.Calculation
 
                 foreach (var simulation in results)
                 {
-                    lifetimeRow[simulation.LossSimulation.KnowledgeShareStrategyType + "-" + simulation.LossSimulation.Id] =
+                    string simulationStrategy = simulation.LossSimulation.PullRequestReviewerSelectionStrategy;
+                    int colonIndex = simulationStrategy.LastIndexOf(':');
+                    int hyphenOneIndex = simulationStrategy.IndexOf("-1", colonIndex);
+                    string simulation_info = simulation.LossSimulation.KnowledgeShareStrategyType + "-" + simulation.LossSimulation.Id + "-" + simulationStrategy.Substring(colonIndex + 1, hyphenOneIndex - colonIndex - 1);
+                    lifetimeRow[simulation_info] =
                         lifetimeResults.ContainsKey(simulation.LossSimulation.Id) ? lifetimeResults[simulation.LossSimulation.Id] : (object)DBNull.Value;
                 }
 
@@ -1570,10 +1578,10 @@ namespace RelationalGit.Calculation
                
                 foreach (var openRevResult in openReviewResults)
                 {
-                    string simulationStrategy = simulationResult.LossSimulation.PullRequestReviewerSelectionStrategy;
+                    string simulationStrategy = openRevResult.LossSimulation.PullRequestReviewerSelectionStrategy;
                     int colonIndex = simulationStrategy.LastIndexOf(':');
                     int hyphenOneIndex = simulationStrategy.IndexOf("-1", colonIndex);
-                    string simulation_info = simulationResult.LossSimulation.KnowledgeShareStrategyType + "-" + simulationResult.LossSimulation.Id + "-" + simulationStrategy.Substring(colonIndex + 1, hyphenOneIndex - colonIndex - 1);
+                    string simulation_info = openRevResult.LossSimulation.KnowledgeShareStrategyType + "-" + openRevResult.LossSimulation.Id + "-" + simulationStrategy.Substring(colonIndex + 1, hyphenOneIndex - colonIndex - 1);
                     dt.Columns.Add(simulation_info, typeof(double));
                 }
                 var max = openReviewResults.Max(a => a.Results.Count());
