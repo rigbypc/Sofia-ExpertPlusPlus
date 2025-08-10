@@ -17,8 +17,8 @@ $kubernetes_conf_AddExpert50 = "Absolute\Path\To\Config\Add_Expert_50\kubernetes
 $kubernetes_conf_AddExpert75 = "Absolute\Path\To\Config\Add_Expert_75\kubernetes_conf.json"
 
 # Roslyn Simulations
+dotnet-rgit --cmd simulate-recommender --recommendation-strategy Reality --conf-path $roslyn_conf_replace
 dotnet-rgit --cmd simulate-recommender --recommendation-strategy cHRev --simulation-type "Random" --conf-path $roslyn_conf_replace
-dotnet-rgit --cmd simulate-recommender --recommendation-strategy Reality --simulation-type "SeededRandom" --conf-path $roslyn_conf_replace
 dotnet-rgit --cmd simulate-recommender --recommendation-strategy AcHRev --simulation-type "SeededRandom" --conf-path $roslyn_conf_replace
 dotnet-rgit --cmd simulate-recommender --recommendation-strategy TurnoverRec --simulation-type "SeededRandom" --conf-path $roslyn_conf_replace
 dotnet-rgit --cmd simulate-recommender --recommendation-strategy Sofia  --simulation-type "SeededRandom" --conf-path $roslyn_conf_replace
@@ -32,8 +32,8 @@ dotnet-rgit --cmd simulate-recommender --recommendation-strategy RAR --simulatio
 
 
 # Rust Simulations
+dotnet-rgit --cmd simulate-recommender --recommendation-strategy Reality --conf-path $rust_conf_replace
 dotnet-rgit --cmd simulate-recommender --recommendation-strategy cHRev --simulation-type "Random" --conf-path $rust_conf_replace
-dotnet-rgit --cmd simulate-recommender --recommendation-strategy Reality --simulation-type "SeededRandom" --conf-path $rust_conf_replace
 dotnet-rgit --cmd simulate-recommender --recommendation-strategy AcHRev --simulation-type "SeededRandom" --conf-path $rust_conf_replace
 dotnet-rgit --cmd simulate-recommender --recommendation-strategy TurnoverRec --simulation-type "SeededRandom" --conf-path $rust_conf_replace
 dotnet-rgit --cmd simulate-recommender --recommendation-strategy Sofia  --simulation-type "SeededRandom" --conf-path $rust_conf_replace
@@ -47,8 +47,8 @@ dotnet-rgit --cmd simulate-recommender --recommendation-strategy RAR --simulatio
 
 
 # Kubernetes Simulations
+dotnet-rgit --cmd simulate-recommender --recommendation-strategy Reality --conf-path $kubernetes_conf_replace
 dotnet-rgit --cmd simulate-recommender --recommendation-strategy cHRev --simulation-type "Random" --conf-path $kubernetes_conf_replace
-dotnet-rgit --cmd simulate-recommender --recommendation-strategy Reality --simulation-type "SeededRandom" --conf-path $kubernetes_conf_replace
 dotnet-rgit --cmd simulate-recommender --recommendation-strategy AcHRev --simulation-type "SeededRandom" --conf-path $kubernetes_conf_replace
 dotnet-rgit --cmd simulate-recommender --recommendation-strategy TurnoverRec --simulation-type "SeededRandom" --conf-path $kubernetes_conf_replace
 dotnet-rgit --cmd simulate-recommender --recommendation-strategy Sofia  --simulation-type "SeededRandom" --conf-path $kubernetes_conf_replace
