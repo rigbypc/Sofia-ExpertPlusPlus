@@ -1,16 +1,16 @@
 # Replication Package
 
-This repository contains the necessary data to replicate the information from the study "_The Cost vs. the Benefit of Adding an Extra Code Reviewer to Mitigate Developer Turnover through Reviewer Recommenders_." First, Install the dependencies for the RelationalGit for the replication steps, read the [README File](ReplicationPackage/README.md) in the _ReplicationPackage_ directory.
+This repository contains the necessary data to replicate the information from the "_Mitigating the Risk of Defects and Improving Knowledge Distribution with Code Reviewer Recommenders_" Paper. First, install the dependencies for RelationalGit, as outlined in the [README File](ReplicationPackage/README.md) located in the _ReplicationPackage_ directory.
 
 # RelationalGit
 
-RelationalGit extracts valuable information about commits, blame, changes, devs, and pull requests from git's data structure and imports it to a relational database such as Microsoft SQL Server. These data can be used for further source code mining analysis. You can easily query the database and find answers to many interesting questions. Since source code mining is one of the hottest topics in academia and industry, RelationalGit wants to help researchers start their investigations more conveniently.
+RelationalGit extracts valuable information about commits, blame, changes, developers, and pull requests from Git's data structure and imports it into a relational database, such as Microsoft SQL Server. These data can be used for further source code mining analysis. You can easily query the database and find answers to many interesting questions. Since source code mining is one of the most prominent topics in academia and industry, RelationalGit aims to facilitate researchers' investigations more conveniently.
 For example, you can find answers to the following questions by running a simple SQL query over extracted data.
 
 * What files have recently been changed by a given developer?
 * Who is the author of a specific line in a specific file? (Git Blame)
 * Which developer has the most commits?
-* What files usually are changed together? This way, you can detect and document your hidden dependencies.
+* What files are usually changed together? This way, you can detect and document your hidden dependencies.
 * Which developer has the most knowledge about a file or project? This idea is based on [Rigby's paper](http://ieeexplore.ieee.org/document/7886975/).
 * Which files are constantly changing? Maybe they are bug-prone.
 * Who is the most appropriate developer to work on a given file?
@@ -45,4 +45,4 @@ dotnet tool install --global SofiaWL --version 2.0.4
 ```
 
 # Replication
-For the replication steps and running simulations , read the [README File](ReplicationPackage/README.md) in the _ReplicationPackage_ directory.
+For replication steps and running simulations, read the [README File](ReplicationPackage/README.md) in the _ReplicationPackage_ directory.
