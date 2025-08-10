@@ -23,7 +23,7 @@ namespace RelationalGit.Calculation
             CalculateExpertiseLoss(actualSimulationId, recommenderSimulationIds, analyzeResultPath);
             CalculateWorkload(actualSimulationId, recommenderSimulationIds, 10, analyzeResultPath);
             CalculateDefectMitigationMetricLoss(actualSimulationId, recommenderSimulationIds, analyzeResultPath);
-            CalculateCCSROutcomePercentilePairwise(actualSimulationId, recommenderSimulationIds, analyzeResultPath);
+            CalculateCCSROutcomePercentile(actualSimulationId, recommenderSimulationIds, analyzeResultPath);
             CalculateRevPlusPlus(recommenderSimulationIds, analyzeResultPath);
         }
 
@@ -803,7 +803,7 @@ namespace RelationalGit.Calculation
                 }
             }
 
-            Write(result, Path.Combine(path, "CSR.csv"));
+            Write(result, Path.Combine(path, "CCSR.csv"));
         }
         private static void CalculateHoardings(long actualId, long[] simulationsIds, int topReviewers, string path)
         {
@@ -1688,3 +1688,4 @@ namespace RelationalGit.Calculation
         }
     }
 }
+
