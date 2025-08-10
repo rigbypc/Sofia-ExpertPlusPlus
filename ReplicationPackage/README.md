@@ -137,28 +137,20 @@ After running the analyzer, the tool creates five CSV files: **Expertise.csv**, 
 
 As some of the simulations can take hours to run, the following table includes the simulation IDs for our experiments. 
 
-| **Recommender**     | **CoreFX** | **CoreCLR** | **Roslyn** | **Rust** | **Kubernetes** |
-|:-------------------:|:---------:|:----------:|:--------:|:----:|:----------:|
-| *Reality*          | 11095     | 10163      | 101      | 110  | 107        |
-| **RQ1: Baseline**  |           |            |          |      |            |
-| *AuthorshipRec*    | 21098     | 20188      | 120      | 127  | 123        |
-| *RevOwnRec*        | 21100     | 20189      | 119      | 124  | 124        |
-| *CHRev*            | 21101     | 20195      | 116      | 120  | 122        |
-| *LearnRec*         | 21102     | 20199      | 118      | 123  | 126        |
-| *RetentionRec*     | 21099     | 20200      | 117      | 122  | 125        |
-| *TurnoverRec*      | 11083     | 10164      | 109      | 112  | 114        |
-| *WhoDo*            | 21103     | 20194      | 123      | 121  | 130        |
-| **RQ2: Recommenders++**  |     |            |          |      |            |
-| *AuthorshipRec++*  | 11085     | 10155      | 102      | 107  | 108        |
-| *RevOwnRec++*      | 11086     | 10156      | 103      | 106  | 109        |
-| *CHRev++*          | 11088     | 10157      | 104      | 105  | 110        |
-| *LearnRec++*       | 11089     | 10158      | 107      | 104  | 111        |
-| *RetentionRec++*   | 11090     | 10159      | 106      | 103  | 112        |
-| *TurnoverRec++*    | 11084     | 10176      | 108      | 109  | 113        |
-| *WhoDo++*          | 11092     | 10161      | 99       | 101  | 106        |
-| **RQ3: FarAwareRec** |         |            |          |      |            |
-| *FarAwareRec*      | 11081     | 10169      | 111      | 113  | 116        |
-| **RQ4: HoardedXRec** |         |            |          |      |            |
-| *Hoarded2Rec*      | 11098     | 10179      | 112      | 115  | 119        |
-| *Hoarded3Rec*      | 11097     | 10180      | 113      | 116  | 118        |
-| *Hoarded4Rec*      | 11096     | 10181      | 114      | 117  | 117        |
+| **Recommender**           | **Roslyn** | **Rust** | **Kubernetes** |
+|:-------------------------:|:----------:|:--------:|:--------------:|
+| Reality                   | 324        | 235      | 221            |
+| **RQ1 & RQ2**             |            |          |                |
+| cHRev                     | 306        | 217      | 203            |
+| AcHRev                    | 307        | 218      | 204            |
+| TurnoverRec               | 312        | 223      | 209            |
+| Sofia                     | 313        | 224      | 210            |
+| RAR                       | 316        | 227      | 213            |
+| SofiaWL                   | 314        | 225      | 211            |
+| WhoDo                     | 315        | 226      | 212            |
+| **RQ3: AddExpertRec(Dt)** |            |          |                |
+| AddExpertRec(25)          | 317        | 228      | 214            |
+| AddExpertRec(50)          | 318        | 229      | 215            |
+| AddExpertRec(75)          | 319        | 230      | 216            |
+
+
