@@ -663,7 +663,6 @@ namespace RelationalGit.Simulation
 
             double reviewersSum = expertDicNew.Count() != 0 ? expertDicNew.Values.Sum() : 0;
             double authorBirdExp = 0;
-            //const double epsilon = 1e-3; // Define epsilon constant
 
             // Add null check for submitter name
             if (!string.IsNullOrEmpty(PRSubmitterNormalizedName))
@@ -671,7 +670,6 @@ namespace RelationalGit.Simulation
                 authorBirdExp = ComputeDeveloperBirdScore(PRSubmitterNormalizedName);
             }
 
-            //return (reviewersSum) * (authorBirdExp + epsilon);
             return reviewersSum + authorBirdExp;
         }
 
