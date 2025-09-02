@@ -10,7 +10,7 @@ The overall steps are
 
 ## Install Relational Git
 
-1) [Install](https://github.com/fahimeh1368/SofiaWL/blob/gh-pages/install.md) the Relational Git and its dependencies.
+1) [Install](https://github.com/CESEL/RelationalGit) the Relational Git and its dependencies.
 
 ## Get the Database
 
