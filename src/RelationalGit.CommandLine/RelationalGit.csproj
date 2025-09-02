@@ -6,17 +6,17 @@
     <TargetFramework>netcoreapp2.2</TargetFramework>
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>dotnet-rgit</ToolCommandName>
-    <Authors>Fahimeh Hajari, Ehsan Mirsaeedi, Peter Rigby</Authors>
-    <Company>Fahimeh Hajari, Ehsan Mirsaeedi, Peter Rigby</Company>
+    <Authors>Anonymous Authors</Authors>
+    <Company>Anonymous Authors</Company>
     <Title>RelationalGit</Title>
-    <PackageLicenseUrl>https://github.com/fahimeh1368/SofiaWL</PackageLicenseUrl>
-    <PackageProjectUrl>https://github.com/fahimeh1368/SofiaWL</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/fahimeh1368/SofiaWL</RepositoryUrl>
+    <PackageLicenseUrl>https://figshare.com/s/e62f52f5550d0f373815</PackageLicenseUrl>
+    <PackageProjectUrl>https://figshare.com/s/e62f52f5550d0f373815</PackageProjectUrl>
+    <RepositoryUrl>https://figshare.com/s/e62f52f5550d0f373815</RepositoryUrl>
     <PackageTags>git;</PackageTags>
     <Description>RelationalGit extracts valuable information about commits, blames, changes, devs, and pull requests out of git's data structure and imports them to a relational database such as Microsoft SQL Server. These data can be a ground for further source code mining analysis.</Description>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-    <Version>2.0.7</Version>
-    <PackageId>SofiaWL</PackageId>
+    <Version>1.1.1</Version>
+    <PackageId>Anonymous</PackageId>
     <ApplicationIcon />
     <StartupObject />
     <Win32Resource />
