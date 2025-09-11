@@ -39,5 +39,5 @@ For example, you can find answers to the following questions by running a simple
 dotnet tool install --global SofiaWL-ExpertPlusPlus --version 1.1.5
 ```
 
-# Replication
+## Replication
 For replication steps and running simulations, read the [README File](ReplicationPackage/README.md) in the _ReplicationPackage_ directory.
