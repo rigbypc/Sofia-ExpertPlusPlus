@@ -117,8 +117,8 @@ As some of the simulations can take hours to run, the following table includes t
 | TurnoverRec               | 312        | 223      | 209            |
 | Sofia                     | 313        | 224      | 210            |
 | RAR                       | 316        | 227      | 213            |
-| SofiaWL                   | 314        | 225      | 211            |
 | WhoDo                     | 315        | 226      | 212            |
+| SofiaWL                   | 314        | 225      | 211            |
 | **RQ3: AddExpertRec(Dt)** |            |          |                |
 | AddExpertRec(25)          | 317        | 228      | 214            |
 | AddExpertRec(50)          | 318        | 229      | 215            |
