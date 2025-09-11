@@ -19,11 +19,11 @@ namespace RelationalGit.Calculation
             if (!Directory.Exists(analyzeResultPath))
                 Directory.CreateDirectory(analyzeResultPath);
 
-            CalculateFaRReduction(actualSimulationId, recommenderSimulationIds, analyzeResultPath);
+            CalculateKRT_Reduction(actualSimulationId, recommenderSimulationIds, analyzeResultPath);
             CalculateExpertiseLoss(actualSimulationId, recommenderSimulationIds, analyzeResultPath);
-            CalculateWorkload(actualSimulationId, recommenderSimulationIds, 10, analyzeResultPath);
-            CalculateDefectMitigationMetricLoss(actualSimulationId, recommenderSimulationIds, analyzeResultPath);
-            CalculateCCSROutcomePercentile(actualSimulationId, recommenderSimulationIds, analyzeResultPath);
+            CalculateCoreWorkload(actualSimulationId, recommenderSimulationIds, 10, analyzeResultPath);
+            CalculateCCSR_Outcome(actualSimulationId, recommenderSimulationIds, analyzeResultPath);
+            CalculateCCSR_Outcome_Percentile(actualSimulationId, recommenderSimulationIds, analyzeResultPath);
             CalculateRevPlusPlus(recommenderSimulationIds, analyzeResultPath);
         }
 
@@ -142,7 +142,7 @@ namespace RelationalGit.Calculation
             // 8. Write out per‐period and overall pairwise percentiles
             Write_Percentiles(
               result,
-              Path.Combine(path, "ExpertiseLoss_Percentile_Pairwise.csv"),
+              Path.Combine(path, $"Expertise_{k}Percentile_Pairwise.csv"),
               overallResults
             );
         }
@@ -233,10 +233,10 @@ namespace RelationalGit.Calculation
                 }
             }
 
-            Write_Percentiles(result, Path.Combine(path, "Expertise_Percentile.csv"), overallResults);
+            Write_Percentiles(result, Path.Combine(path, $"Expertise{k}Percentile.csv"), overallResults);
         }
 
-        public void CalculateCCSROutcomePercentilePairwise(long actualId, long[] simulationsIds, string path, double k = 80)
+        public void CalculateCCSR_Outcome_PercentilePairwise(long actualId, long[] simulationsIds, string path, double k = 80)
         {
             if (!Directory.Exists(path))
                 Directory.CreateDirectory(path);
@@ -339,10 +339,10 @@ namespace RelationalGit.Calculation
                 }
             }
 
-            Write_Percentiles(result, Path.Combine(path, "CCSR_Percentile_Pairwise.csv"), overallResults);
+            Write_Percentiles(result, Path.Combine(path, $"CCSR_{k}Percentile_Pairwise.csv"), overallResults);
         }
 
-        public void CalculateCCSROutcomePercentile(long actualId, long[] simulationsIds, string path, double k = 80)
+        public void CalculateCCSR_Outcome_Percentile(long actualId, long[] simulationsIds, string path, double k = 80)
         {
             if (!Directory.Exists(path))
                 Directory.CreateDirectory(path);
@@ -424,7 +424,7 @@ namespace RelationalGit.Calculation
                 }
             }
 
-            Write_Percentiles(result, Path.Combine(path, "CCSR_Percentile.csv"), overallResults);
+            Write_Percentiles(result, Path.Combine(path, $"CCSR_{k}Percentile.csv"), overallResults);
         }
 
         private static void Write_Percentiles(IEnumerable<SimulationResult> simulationResults, string path, Dictionary<long, double> overallResults)
@@ -514,7 +514,7 @@ namespace RelationalGit.Calculation
 
 
 
-        public void CalculateWorkload(long actualId, long[] simulationsIds, int topReviewers, string path)
+        public void CalculateCoreWorkload(long actualId, long[] simulationsIds, int topReviewers, string path)
         {
 
             if (!Directory.Exists(path))
@@ -730,7 +730,7 @@ namespace RelationalGit.Calculation
         }
 
 
-        public void CalculateDefectMitigationMetricLoss(long actualId, long[] simulationsIds, string path)
+        public void CalculateCCSR_Outcome(long actualId, long[] simulationsIds, string path)
         {
             if (!Directory.Exists(path))
                 Directory.CreateDirectory(path);
@@ -1038,7 +1038,7 @@ namespace RelationalGit.Calculation
             return d.NormalizedName.Equals(Knowledgeable) && d.LastCommitPeriodId <= (int)q.PeriodId;
         }
         //static int TEMPVAL = 0;
-        public void CalculateFaRReduction(long actualId, long[] simulationsIds, string path)
+        public void CalculateKRT_Reduction(long actualId, long[] simulationsIds, string path)
         {
             if (!Directory.Exists(path))
                 Directory.CreateDirectory(path);
@@ -1089,7 +1089,7 @@ namespace RelationalGit.Calculation
                 }
             }
 
-            Write(result, Path.Combine(path, "FaR.csv"));
+            Write(result, Path.Combine(path, "KRT.csv"));
 
         }
        
@@ -1688,4 +1688,3 @@ namespace RelationalGit.Calculation
         }
     }
 }
-
