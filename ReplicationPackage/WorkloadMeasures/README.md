@@ -38,8 +38,10 @@ GROUP BY PullIndex
 ORDER BY PullIndex;
 
 ```
-Note: Based on the recommender's definition, this query may take up to 10 minutes to run for each recommender. The data from our simulations is available in [ResultsCSV](../ResultsCSV/WorkloadAUC) Directory.
+Note: Based on the recommender's definition, this query may take some minutes to run for each recommender. The data from our simulations is available in [ResultsCSV](../ResultsCSV/WorkloadAUC/Simulated) Directory.
 
 ### How to calculate the Gini-Workload for each recommender.
 
-To calculate the Gini-Workload outcome for each recommender, you should run the [WorkloadAUC.r](WorkloadAUC.R) script, using the extracted open reviews. 
+To calculate the Gini-Workload outcome for each recommender, update the paths to open reviews of recommenders in [WorkloadAUC.r](WorkloadAUC.R) script and then run it. 
+
+**Note:** The [R language](https://cran.r-project.org/bin/) should be installed on your machine to run this script.
