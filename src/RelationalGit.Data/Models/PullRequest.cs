@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace RelationalGit.Data
@@ -36,5 +36,11 @@ namespace RelationalGit.Data
         public string EventId => Number.ToString();
 
         public string OverlapPullRequest { get; set; }
+        
+        public string PRCommits { get; set; }
+
+        public string Metrics { get; set; }
+
+        public double? DefectProneness { get; set; }
     }
 }
