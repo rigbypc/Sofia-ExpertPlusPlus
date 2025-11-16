@@ -35,7 +35,7 @@ namespace RelationalGit.Recommendation
 
             DateTime reviewer_recency = DateTime.MinValue;
             DateTime nowTime = pullRequestContext.PullRequest.CreatedAtDateTime ?? DateTime.Now;
-            var reviewerCommits = pullRequestContext.KnowledgeMap.CommitBasedKnowledgeMap.GetDeveloperCommitsOnFile(reviewer.DeveloperName, filePath, nowTime, reviewer_recency);
+            var reviewerCommits = pullRequestContext.KnowledgeMap.CommitBasedKnowledgeMap.GetDeveloperCommitsOnFile(reviewer.DeveloperName, filePath, nowTime, out reviewer_recency);
             if (reviewerCommits == 0)
             {
                 return score;
