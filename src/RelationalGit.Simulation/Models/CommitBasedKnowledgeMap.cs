@@ -178,21 +178,29 @@ namespace RelationalGit.Simulation
                     fileRecentCommit);
         }
 
-        public int GetDeveloperCommitsOnFile(string normalizedName, string path, DateTime pullReqTime, DateTime Recent)
+        public int GetDeveloperCommitsOnFile(string normalizedName, string path, DateTime pullReqTime, out DateTime recent)
         {
             var developersFileCommitsDetails = _map.GetValueOrDefault(path);
             if (developersFileCommitsDetails == null)
+            {
+                recent = DateTime.MinValue;
                 return 0;
-            var developercommits = developersFileCommitsDetails.Where(a => a.Key == normalizedName).FirstOrDefault();
+            }
 
+            var developercommits = developersFileCommitsDetails.Where(a => a.Key == normalizedName).FirstOrDefault();
             if (developercommits.Value == null)
+            {
+                recent = DateTime.MinValue;
                 return 0;
-            Recent = DateTime.MinValue;
+            }
+
+            recent = DateTime.MinValue;
             var filtered = developercommits.Value.Commits.Where(b => b.AuthorDateTime < pullReqTime);
             if (filtered.Count() > 0)
             {
-                Recent = filtered.Max(a => a.CommitterDateTime);
+                recent = filtered.Max(a => a.CommitterDateTime);
             }
+
             return filtered.Count();
         }
     }
