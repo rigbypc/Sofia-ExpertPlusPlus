@@ -24,7 +24,30 @@ The overall steps are
 },
 
 ```
-## Run Simulations
+
+## Run the Simulations
+
+1) Open [simulations.ps1](simulations.ps1) using an editor and update all the paths to the configuration files. For instance, each of the following variables contains the absolute path of the corresponding configuration file for the first research question.
+
+
+```PowerShell
+$roslyn_conf_RQ1 = "\absolute\path\to\Replace_All\roslyn_conf.json"
+$rust_conf_RQ1 = "\absolute\path\to\Replace_All\rust_conf.json"
+$kubernetes_conf_RQ1 = "\absolute\path\to\Replace_All\kubernetes_conf.json"
+```
+
+2) Open PowerShell and run the [simulations.ps1](simulations.ps1) script.
+
+``` PowerShell
+./simulations.ps1
+```
+
+This script simulates the performance of all the defined reviewer recommendation algorithms across all projects.
+
+**Note**: if you get any error, make sure you have set the PowerShell [execution policy](https://superuser.com/questions/106360/how-to-enable-execution-of-powershell-scripts) to **Unrestricted** or **RemoteAssigned**.
+
+
+## If you want to run the simulations separately for each RQ:
 
 The following sections describe the commands needed to run simulations for each research question. For each simulation, a sample is provided that illustrates how to run the simulation using the tool. To run the simulations for each of the following research questions, you need to open the [source code](../src/RelationalGit.sln) as a project in your IDE like [Microsoft Visual Studio](https://visualstudio.microsoft.com/downloads/) and run the corresponding commands for each RQ (Debug → RelationalGit Debug Properties → Create a new profile → Project → insert the commands in ```Command line arguments``` box). Since you need to change the configuration files for each research question, we recommend using configuration files in the [config directory](./config) to avoid confusion. 
 
