@@ -27,13 +27,14 @@ The overall steps are
 
 ## Run the Simulations
 
-1) Open [simulations.ps1](simulations.ps1) using an editor and update all the paths to the configuration files. For instance, each of the following variables contains the absolute path of the corresponding configuration file for the first research question.
+1) Open [simulations.ps1](simulations.ps1) using an editor and update all the paths to the configuration files. For instance, each of the following variables contains the absolute path of the corresponding configuration file for the Roslyn Project.
 
 
 ```PowerShell
-$roslyn_conf_RQ1 = "\absolute\path\to\Replace_All\roslyn_conf.json"
-$rust_conf_RQ1 = "\absolute\path\to\Replace_All\rust_conf.json"
-$kubernetes_conf_RQ1 = "\absolute\path\to\Replace_All\kubernetes_conf.json"
+$roslyn_conf_replace = "Absolute\Path\To\Config\Replace_All\roslyn_conf.json"
+$roslyn_conf_AddExpert25 = "Absolute\Path\To\Config\Add_Expert_25\roslyn_conf.json"
+$roslyn_conf_AddExpert50 = "Absolute\Path\To\Config\Add_Expert_50\roslyn_conf.json"
+$roslyn_conf_AddExpert75 = "Absolute\Path\To\Config\Add_Expert_75\roslyn_conf.json"
 ```
 
 2) Open PowerShell and run the [simulations.ps1](simulations.ps1) script.
@@ -53,7 +54,7 @@ The following sections describe the commands needed to run simulations for each 
 
 ### RQ1 & RQ2: CCSR vs. other outcome measures
 
-To replicate the results of RQ1 & RQ2, you should set the ```PullRequestReviewerSelectionStrategy``` to  ```replacerandom```. In this way, one of the reviewers on each pull request will be randomly (seeded) replaced with the top-recommended candidate suggested by each recommender. 
+To replicate the results of ```RQ1 & RQ2```, you should set the ```PullRequestReviewerSelectionStrategy``` to  ```replacerandom```. In this way, one of the reviewers on each pull request will be randomly (seeded) replaced with the top-recommended candidate suggested by each recommender. 
 
 ```
 "PullRequestReviewerSelectionStrategy" : "0:nothing-nothing,-:replacerandom-1",
@@ -85,7 +86,7 @@ To run the AddExpertRec strategy, we define the ```addDefect_Dt``` value for the
 "PullRequestReviewerSelectionStrategy" : "0:nothing-nothing,-:addDefect_Dt-1",
 ```
 
-The Dt parameter should be adjusted based on the recommender. In our paper, we run simulations for the defect risk thresholds of Dt = {25, 50, 75}. For example, if you want to run the **AddExpertRec(25)** recommender, you should set the ```PullRequestReviewerSelectionStrategy``` argument as follows. In this way, the recommender will add an extra reviewer for PRs whose defect proneness is at or above 25% and replace one of the actual reviewers with the top recommended candidate in other PRs.
+The ```Dt``` parameter should be adjusted based on the recommendation strategy. In this paper, we run simulations for the defect risk thresholds of `Dt = {25, 50, 75}`. For example, if you want to run the **AddExpertRec(25)** recommender, you should set the ```PullRequestReviewerSelectionStrategy``` argument as follows. In this way, the recommender will add an extra reviewer for PRs whose defect proneness is at or above 25% and replace one of the actual reviewers with the top recommended candidate in other PRs.
 
 ```
 "PullRequestReviewerSelectionStrategy" : "0:nothing-nothing,-:addDefect_25-1",
@@ -125,7 +126,7 @@ dotnet-rgit --cmd analyze-simulations --analyze-result-path <path_to_result> --r
 
 ### Results for the outcome measures:
 
-After running the analyzer, the tool creates five CSV files: **Expertise.csv**, **KRT.csv**, **Core_Workload.csv**, **CCSR.csv**, and **ReviewerPlusPlus.csv**. The first column shows the project's periods (quarters) in the first four files. Each column corresponds to one of the simulations. Each cell in the first four files displays the percentage change between the actual and simulated outcomes for that period. The last two rows show the *median* and *average* of columns. The **ReviewerPlusPlus.csv** file shows the proportion of pull requests to which a recommender adds an extra reviewer in each period. The last rows of this file present the *Rev++* outcome during the whole lifetime of projects. Note that the **Core_Workload.csv** file includes the number of reviews for the top 10 reviewers in each period. This outcome measure is defined in [prior work](https://dl.acm.org/doi/10.1145/3377811.3380335) that was published in ICSE 2020. To calculate the Gini-Workload of reviewers, follow the instructions in [WorkloadAUC.r](WorkloadMeasures/README.md).
+After running the analyzer, the tool creates five CSV files: **Expertise.csv**, **KRT.csv**, **Core_Workload.csv**, **CCSR.csv**, and **ReviewerPlusPlus.csv**. The first column shows the project's periods (quarters) in the first four files. Each column corresponds to one of the simulations. Each cell in the first four files displays the percentage change between the actual and simulated outcomes for that period. The last two rows show the *median* and *average* of columns. The **ReviewerPlusPlus.csv** file shows the proportion of pull requests to which a recommender adds an extra reviewer in each period. The last rows of this file present the *Rev++* outcome during the whole lifetime of projects. Note that the **Core_Workload.csv** file includes the percentage change in the number of reviews for the top 10 reviewers in each period. This outcome measure is defined in [prior work](https://dl.acm.org/doi/10.1145/3377811.3380335) that was published in ICSE 2020. To calculate the Gini-Workload of reviewers, follow the instructions in [WorkloadAUC.r](WorkloadMeasures/README.md).
 
 ### Our Simulation IDs:
 
@@ -147,4 +148,10 @@ As some of the simulations can take hours to run, the following table includes t
 | AddExpertRec(50)          | 318        | 229      | 215            |
 | AddExpertRec(75)          | 319        | 230      | 216            |
 
+---
+In addition to the studied recommenders, you can also execute simulations for the `AuthorshipRec`, `RevOwnRec`, `LearnRec`, and `RetentionRec` strategies introduced in prior studies. To simulate any of these recommenders, simply specify their names in the simulation command. For example, to evaluate the performance of the `RetentionRec` recommender on the Roslyn project, use the following command:
+
+```PowerShell
+dotnet-rgit --cmd simulate-recommender --recommendation-strategy RetentionRec --simulation-type "SeededRandom" --conf-path <path_to_roslyn_config_file>
+```
 
