@@ -33,11 +33,11 @@ For example, you can find answers to the following questions by running a simple
 
 ### Install (dotnet Global Tool)
 
-```SofiaWL``` is a [dotnet Global tool](https://www.nuget.org/packages/SofiaWL) based on RelationalGit. You should install this tool to run the simulations. You can use it seamlessly with your favorite command-line application. 
+```SofiaWL-ExpertPlusPlus``` is a [dotnet Global tool](https://www.nuget.org/packages/SofiaWL-ExpertPlusPlus/) based on RelationalGit. You should install this tool to run the simulations. You can use it seamlessly with your favorite command-line application. 
 
 ```PowerShell
-dotnet tool install --global SofiaWL --version 2.0.12
+dotnet tool install --global SofiaWL-ExpertPlusPlus --version 1.1.2
 ```
-
+---
 ## Replication
 For replication steps and running simulations, read the [README File](ReplicationPackage/README.md) in the _ReplicationPackage_ directory.
