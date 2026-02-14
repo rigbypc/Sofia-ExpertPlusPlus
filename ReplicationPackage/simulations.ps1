@@ -5,7 +5,6 @@ $roslyn_conf_AddExpert25 = "Absolute\Path\To\Config\Add_Expert_25\roslyn_conf.js
 $roslyn_conf_AddExpert50 = "Absolute\Path\To\Config\Add_Expert_50\roslyn_conf.json"
 $roslyn_conf_AddExpert75 = "Absolute\Path\To\Config\Add_Expert_75\roslyn_conf.json"
 
-
 $rust_conf_replace = "Absolute\Path\To\Config\Replace_All\rust_conf.json"
 $rust_conf_AddExpert25 = "Absolute\Path\To\Config\Add_Expert_25\rust_conf.json"
 $rust_conf_AddExpert50 = "Absolute\Path\To\Config\Add_Expert_50\rust_conf.json"
@@ -30,7 +29,6 @@ dotnet-rgit --cmd simulate-recommender --recommendation-strategy RAR --simulatio
 dotnet-rgit --cmd simulate-recommender --recommendation-strategy RAR --simulation-type "SeededRandom" --conf-path $roslyn_conf_AddExpert50
 dotnet-rgit --cmd simulate-recommender --recommendation-strategy RAR --simulation-type "SeededRandom" --conf-path $roslyn_conf_AddExpert75
 
-
 # Rust Simulations
 dotnet-rgit --cmd simulate-recommender --recommendation-strategy Reality --conf-path $rust_conf_replace
 dotnet-rgit --cmd simulate-recommender --recommendation-strategy cHRev --simulation-type "Random" --conf-path $rust_conf_replace
@@ -45,7 +43,6 @@ dotnet-rgit --cmd simulate-recommender --recommendation-strategy RAR --simulatio
 dotnet-rgit --cmd simulate-recommender --recommendation-strategy RAR --simulation-type "SeededRandom" --conf-path $rust_conf_AddExpert50
 dotnet-rgit --cmd simulate-recommender --recommendation-strategy RAR --simulation-type "SeededRandom" --conf-path $rust_conf_AddExpert75
 
-
 # Kubernetes Simulations
 dotnet-rgit --cmd simulate-recommender --recommendation-strategy Reality --conf-path $kubernetes_conf_replace
 dotnet-rgit --cmd simulate-recommender --recommendation-strategy cHRev --simulation-type "Random" --conf-path $kubernetes_conf_replace
@@ -59,7 +56,6 @@ dotnet-rgit --cmd simulate-recommender --recommendation-strategy SofiaWL  --simu
 dotnet-rgit --cmd simulate-recommender --recommendation-strategy RAR --simulation-type "SeededRandom" --conf-path $kubernetes_conf_AddExpert25
 dotnet-rgit --cmd simulate-recommender --recommendation-strategy RAR --simulation-type "SeededRandom" --conf-path $kubernetes_conf_AddExpert50
 dotnet-rgit --cmd simulate-recommender --recommendation-strategy RAR --simulation-type "SeededRandom" --conf-path $kubernetes_conf_AddExpert75
-
 
 ## Run analyzer to calculate the outcome measures
 ## You should first run the previous commands and restore the Simulation-Ids from the database. Then, update the Simulation IDs and Reality ID for each project and run the following commands.
