@@ -1,6 +1,6 @@
 # Replication Package
 
-This repository contains the necessary data to replicate the information from the "_Mitigating the Risk of Defects and Improving Knowledge Distribution with Code Reviewer Recommenders_" Paper, which is presented at the FSE'26 conference. First, install the dependencies for RelationalGit, as outlined in the [README File](ReplicationPackage/README.md) located in the _ReplicationPackage_ directory.
+This repository contains the necessary data to replicate the information from the "_Mitigating the Risk of Defects and Improving Knowledge Distribution with Code Reviewer Recommenders_" Paper, which is accepted for presentation at the FSE'26 conference. First, install the dependencies for RelationalGit, as outlined in the [README File](ReplicationPackage/README.md) located in the _ReplicationPackage_ directory.
 
 ## Dependencies
 
