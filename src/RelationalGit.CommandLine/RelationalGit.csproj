@@ -1,25 +1,28 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <LangVersion>latest</LangVersion>
-    <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp2.2</TargetFramework>
-    <PackAsTool>true</PackAsTool>
-    <ToolCommandName>dotnet-rgit</ToolCommandName>
-    <Authors>Anonymous Authors</Authors>
-    <Company>Anonymous Authors</Company>
-    <Title>RelationalGit</Title>
-    <PackageLicenseUrl>https://figshare.com/s/e62f52f5550d0f373815</PackageLicenseUrl>
-    <PackageProjectUrl>https://figshare.com/s/e62f52f5550d0f373815</PackageProjectUrl>
-    <RepositoryUrl>https://figshare.com/s/e62f52f5550d0f373815</RepositoryUrl>
-    <PackageTags>git;</PackageTags>
-    <Description>RelationalGit extracts valuable information about commits, blames, changes, devs, and pull requests out of git's data structure and imports them to a relational database such as Microsoft SQL Server. These data can be a ground for further source code mining analysis.</Description>
+  	<LangVersion>latest</LangVersion>
+  	<OutputType>Exe</OutputType>
+  	<TargetFramework>netcoreapp2.2</TargetFramework>
+  	<PackAsTool>true</PackAsTool>
+  	<ToolCommandName>dotnet-rgit</ToolCommandName>
+  	<Authors>Mohammadali Sefidi Esfahani, Ehsan Mirsaeedi, Peter Rigby</Authors>
+  	<Company>Mohammadali Sefidi Esfahani, Ehsan Mirsaeedi, Peter Rigby</Company>
+  	<Title>SofiaWL-ExpertPlusPlus</Title>
+  	<PackageLicenseExpression>MIT</PackageLicenseExpression>
+  	<PackageProjectUrl>https://github.com/mojtabaSefidi/Sofia-ExpertPlusPlus/</PackageProjectUrl>
+  	<RepositoryUrl>https://github.com/mojtabaSefidi/Sofia-ExpertPlusPlus/</RepositoryUrl>
+  	<PackageTags>git;</PackageTags>
+  	<Description>
+  		Replication package for the 'Mitigating the Risk of Defects and Improving Knowledge Distribution with Code Reviewer Recommenders' paper, which is accepted for presentation at the FSE'26 conference. Compared to the SofiaWL package, we implement the necessary methods to suggest an additional reviewer for Pull Requests with Knowledge at Risk (PRKRs) based on diverse recommendation strategies. This package is based on RelationalGit, which can extract valuable information about commits, blame, changes, developers, and pull requests from Git's data structure and import it into a relational database, such as Microsoft SQL Server. These data can be a ground for further source code mining analysis.
+  	</Description>		
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-    <Version>1.1.1</Version>
-    <PackageId>Anonymous</PackageId>
-    <ApplicationIcon />
-    <StartupObject />
-    <Win32Resource />
+  	<Version>1.1.2</Version>
+  	<Platforms>AnyCPU;x64</Platforms>
+  	<PackageId>SofiaWL-ExpertPlusPlus</PackageId>
+  	<ApplicationIcon />
+  	<StartupObject />
+  	<Win32Resource />
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
