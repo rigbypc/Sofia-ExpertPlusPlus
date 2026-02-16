@@ -149,9 +149,43 @@ As some of the simulations can take hours to run, the following table includes t
 | AddExpertRec(75)          | 319        | 230      | 216            |
 
 ---
+## More Options:
+
+#### Other Reviewer Recommenders:
 In addition to the studied recommenders, you can also execute simulations for the `AuthorshipRec`, `RevOwnRec`, `LearnRec`, and `RetentionRec` strategies introduced in prior studies. To simulate any of these recommenders, simply specify their names in the simulation command. For example, to evaluate the performance of the `RetentionRec` recommender on the Roslyn project, use the following command:
 
 ```PowerShell
 dotnet-rgit --cmd simulate-recommender --recommendation-strategy RetentionRec --simulation-type "SeededRandom" --conf-path <path_to_roslyn_config_file>
 ```
 
+#### Other Aggregation Functions:
+In addition to the linear summation of reviewers and author expertise, we implement other aggregation functions in this replication package for the **changeset safety ratio**. 
+
+```csharp
+// CSR outcome: MaxReviewers
+public double ComputeMaxRevExpertise(DeveloperKnowledge[] selectedReviewers)
+
+// SumReviewers
+public double ComputeSumRevExpertise(DeveloperKnowledge[] selectedReviewers)
+
+// MaxReviewers + Author
+public double ComputeMaxRevPlusAutExpertise(DeveloperKnowledge[] selectedReviewers)
+
+// CCSR outcome:  SumReviewers + Author
+public double ComputeSumRevAutExpertise(DeveloperKnowledge[] selectedReviewers)
+
+// P75([reviewers, author])
+public double Compute75PercentileRevAutExpertise(DeveloperKnowledge[] selectedReviewers)
+
+// mean([reviewers, author])
+public double ComputeMeanRevAutExpertise(DeveloperKnowledge[] selectedReviewers)
+
+// median([reviewers, author])
+public double ComputeMedianRevAutExpertise(DeveloperKnowledge[] selectedReviewers)
+
+// max([reviewers, author])
+public double ComputeMaxRevAutExpertise(DeveloperKnowledge[] selectedReviewers)
+
+```
+
+To run simulations with these aggregation functions, you should update the **`PullRequestRecommendationResult()`** function in [SpreadingKnowledgeShareStrategyBase.cs](../src/RelationalGit.Recommendation/Strategies/Spreading/SpreadingKnowledgeShareStrategyBase.cs#L235) (lines 235 & 256) and [RealityRecommendationStrategy.cs](../src/RelationalGit.Recommendation/Strategies/General/RealityRecommendationStrategy.cs#L23) (line 23) files.
