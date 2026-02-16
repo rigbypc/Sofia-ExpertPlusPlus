@@ -603,7 +603,9 @@ namespace RelationalGit.Simulation
 
             return validFileCount > 0 ? score / (5 * validFileCount) : 0.0;
         }
-        public double ComputeMaxExpertise(DeveloperKnowledge[] selectedReviewers)
+
+        // CSR outcome
+        public double ComputeMaxRevExpertise(DeveloperKnowledge[] selectedReviewers)
         {
             if (PullRequestFiles.Count() == 0)
             {
@@ -640,10 +642,38 @@ namespace RelationalGit.Simulation
             }
 
             return expertDicNew.Count() != 0 ? expertDicNew.Values.Sum() : 0;
-
         }
 
+        public double ComputeMaxRevPlusAutExpertise(DeveloperKnowledge[] selectedReviewers)
+        {
+            if (PullRequestFiles.Count() == 0)
+            {
+                return 0;
+            }
 
+            Dictionary<string, double> expertDicNew = new Dictionary<string, double>();
+            foreach (var reviewer in selectedReviewers)
+            {
+                var val = ComputeDeveloperBirdScore(reviewer.DeveloperName);
+                if (val != 0)
+                {
+                    expertDicNew[reviewer.DeveloperName] = val;
+                }
+            }
+
+            double reviewersMax = expertDicNew.Count() != 0 ? expertDicNew.Values.Max() : 0;
+            double authorBirdExp = 0;
+
+            // Add null check for submitter name
+            if (!string.IsNullOrEmpty(PRSubmitterNormalizedName))
+            {
+                authorBirdExp = ComputeDeveloperBirdScore(PRSubmitterNormalizedName);
+            }
+
+            return reviewersMax + authorBirdExp;
+        }
+
+        // CCSR outcome
         public double ComputeSumRevAutExpertise(DeveloperKnowledge[] selectedReviewers)
         {
             if (PullRequestFiles.Count() == 0)
@@ -673,6 +703,128 @@ namespace RelationalGit.Simulation
             return reviewersSum + authorBirdExp;
         }
 
+        public double Compute75PercentileRevAutExpertise(DeveloperKnowledge[] selectedReviewers)
+        {
+            if (PullRequestFiles.Count() == 0)
+            {
+                return 0;
+            }
+
+            List<double> expertiseValues = new List<double>();
+
+            foreach (var reviewer in selectedReviewers)
+            {
+                var val = ComputeDeveloperBirdScore(reviewer.DeveloperName);
+                if (val != 0)
+                {
+                    expertiseValues.Add(val);
+                }
+            }
+
+            if (!string.IsNullOrEmpty(PRSubmitterNormalizedName))
+            {
+                var authorVal = ComputeDeveloperBirdScore(PRSubmitterNormalizedName);
+                if (authorVal != 0)
+                {
+                    expertiseValues.Add(authorVal);
+                }
+            }
+
+            if (expertiseValues.Count == 0)
+            {
+                return 0;
+            }
+
+            expertiseValues.Sort();
+
+            double position = 0.75 * (expertiseValues.Count - 1);
+            int lowerIndex = (int)Math.Floor(position);
+            int upperIndex = (int)Math.Ceiling(position);
+
+            if (lowerIndex == upperIndex)
+            {
+                return expertiseValues[lowerIndex];
+            }
+
+            double weight = position - lowerIndex;
+            return expertiseValues[lowerIndex] +
+                    weight * (expertiseValues[upperIndex] - expertiseValues[lowerIndex]);
+        }
+
+        public double ComputeMeanRevAutExpertise(DeveloperKnowledge[] selectedReviewers)
+        {
+            if (PullRequestFiles.Count() == 0)
+            {
+                return 0;
+            }
+
+            List<double> expertiseValues = new List<double>();
+
+            foreach (var reviewer in selectedReviewers)
+            {
+                var val = ComputeDeveloperBirdScore(reviewer.DeveloperName);
+                if (val != 0)
+                {
+                    expertiseValues.Add(val);
+                }
+            }
+
+            if (!string.IsNullOrEmpty(PRSubmitterNormalizedName))
+            {
+                var authorVal = ComputeDeveloperBirdScore(PRSubmitterNormalizedName);
+                if (authorVal != 0)
+                {
+                    expertiseValues.Add(authorVal);
+                }
+            }
+
+            return expertiseValues.Count != 0 ? expertiseValues.Average() : 0;
+        }
+
+        public double ComputeMedianRevAutExpertise(DeveloperKnowledge[] selectedReviewers)
+        {
+            if (PullRequestFiles.Count() == 0)
+            {
+                return 0;
+            }
+
+            List<double> expertiseValues = new List<double>();
+
+            foreach (var reviewer in selectedReviewers)
+            {
+                var val = ComputeDeveloperBirdScore(reviewer.DeveloperName);
+                if (val != 0)
+                {
+                    expertiseValues.Add(val);
+                }
+            }
+
+            if (!string.IsNullOrEmpty(PRSubmitterNormalizedName))
+            {
+                var authorVal = ComputeDeveloperBirdScore(PRSubmitterNormalizedName);
+                if (authorVal != 0)
+                {
+                    expertiseValues.Add(authorVal);
+                }
+            }
+
+            if (expertiseValues.Count == 0)
+            {
+                return 0;
+            }
+
+            expertiseValues.Sort();
+            int count = expertiseValues.Count;
+            int mid = count / 2;
+
+            if (count % 2 == 0)
+            {
+                return (expertiseValues[mid - 1] + expertiseValues[mid]) / 2.0;
+            }
+
+            return expertiseValues[mid];
+        }
+
         public double ComputeMaxRevAutExpertise(DeveloperKnowledge[] selectedReviewers)
         {
             if (PullRequestFiles.Count() == 0)
@@ -680,26 +832,27 @@ namespace RelationalGit.Simulation
                 return 0;
             }
 
-            Dictionary<string, double> expertDicNew = new Dictionary<string, double>();
+            List<double> expertiseValues = new List<double>();
+
             foreach (var reviewer in selectedReviewers)
             {
                 var val = ComputeDeveloperBirdScore(reviewer.DeveloperName);
                 if (val != 0)
                 {
-                    expertDicNew[reviewer.DeveloperName] = val;
+                    expertiseValues.Add(val);
                 }
             }
 
-            double reviewersMax = expertDicNew.Count() != 0 ? expertDicNew.Values.Max() : 0;
-            double authorBirdExp = 0;
-
-            // Add null check for submitter name
             if (!string.IsNullOrEmpty(PRSubmitterNormalizedName))
             {
-                authorBirdExp = ComputeDeveloperBirdScore(PRSubmitterNormalizedName);
+                var authorVal = ComputeDeveloperBirdScore(PRSubmitterNormalizedName);
+                if (authorVal != 0)
+                {
+                    expertiseValues.Add(authorVal);
+                }
             }
 
-            return reviewersMax + authorBirdExp;
+            return expertiseValues.Count != 0 ? expertiseValues.Max() : 0;
         }
 
         public double? ComputeDefectPronenessScore()
@@ -712,9 +865,7 @@ namespace RelationalGit.Simulation
             return this.PullRequest.DefectProneness;
         }
     }
-
-
-
+    
     public class CommitComparer : IComparer<Commit>
     {
         public int Compare(Commit x, Commit y)
