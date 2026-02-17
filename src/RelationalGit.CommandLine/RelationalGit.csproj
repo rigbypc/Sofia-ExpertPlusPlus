@@ -10,14 +10,14 @@
   	<Company>Mohammadali Sefidi Esfahani, Ehsan Mirsaeedi, Peter Rigby</Company>
   	<Title>SofiaWL-ExpertPlusPlus</Title>
   	<PackageLicenseExpression>MIT</PackageLicenseExpression>
-  	<PackageProjectUrl>https://github.com/mojtabaSefidi/Sofia-ExpertPlusPlus/</PackageProjectUrl>
-  	<RepositoryUrl>https://github.com/mojtabaSefidi/Sofia-ExpertPlusPlus/</RepositoryUrl>
+  	<PackageProjectUrl>https://github.com/rigbypc/Sofia-ExpertPlusPlus/</PackageProjectUrl>
+  	<RepositoryUrl>https://github.com/rigbypc/Sofia-ExpertPlusPlus/</RepositoryUrl>
   	<PackageTags>git;</PackageTags>
   	<Description>
   		Replication package for the 'Mitigating the Risk of Defects and Improving Knowledge Distribution with Code Reviewer Recommenders' paper, which is accepted for presentation at the FSE'26 conference. Compared to the SofiaWL package, we implement the necessary methods to suggest an additional reviewer for Pull Requests with Knowledge at Risk (PRKRs) based on diverse recommendation strategies. This package is based on RelationalGit, which can extract valuable information about commits, blame, changes, developers, and pull requests from Git's data structure and import it into a relational database, such as Microsoft SQL Server. These data can be a ground for further source code mining analysis.
   	</Description>		
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-  	<Version>1.1.2</Version>
+  	<Version>1.1.3</Version>
   	<Platforms>AnyCPU;x64</Platforms>
   	<PackageId>SofiaWL-ExpertPlusPlus</PackageId>
   	<ApplicationIcon />
